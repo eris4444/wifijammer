@@ -4,9 +4,9 @@ WiFi Jammer is a Python script designed for ethical hacking and security researc
 
 # Installation Requirements
 
-aircrack-ng
-python3
-python3-pip
+- aircrack-ng
+- python3
+- python3-pip
 
 
 ## Features
