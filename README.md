@@ -1,4 +1,4 @@
-# WiFi Jammer  ERIS
+# WiFi Jammer  ##ERIS
 
 WiFi Jammer is a Python script designed for ethical hacking and security research purposes.
 
