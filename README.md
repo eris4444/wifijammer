@@ -26,12 +26,12 @@ To use WiFi Jammer, follow these steps:
     ```bash
     git clone https://github.com/eris4444/wifijammer
     ```
-    2. Change to the project directory:
+2. Change to the project directory:
 
     ```bash
     cd wifiJammer
     ```
-    3. Run the script with elevated privileges:
+3. Run the script with elevated privileges:
 
     ```bash
     sudo python3 wifideauth.py
