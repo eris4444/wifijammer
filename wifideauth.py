@@ -39,7 +39,9 @@ def check_for_essid(essid, lst):
 # Basic user interface header
 print(r"""
 
-                   ERIS WIFIJAMMER                     
+                   ERIS WIFIJAMMER    (DEAUTH)
+github: https://github.com/eris4444      (eris4444)
+youtube: ErisNett              
 
 
 """)
