@@ -1,53 +1,84 @@
+#include <cs50.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <string.h>
+#include <ctype.h>
+#include <math.h>
 
-#define N 26
-// امتیاز هر حرف الفبا
-int POINTS[N] = {1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10};
-
-// تابع محاسبه امتیاز کلمه
-int compute_score(char *word)
-{
-    int score = 0;
-    for (int i = 0; i < strlen(word); i++)
-    {
-        if (isalpha(word[i]))  // بررسی اینکه کاراکتر حرف است
-        {
-            int index = tolower(word[i]) - 'a';
-            score += POINTS[index];
-        }
-    }
-    return score;
-}
+int count_letters(string text);
+int count_words(string text);
+int count_sentences(string text);
 
 int main(void)
 {
-    char word1[100], word2[100];
+    // دریافت ورودی از کاربر
+    string text = get_string("Text: ");
 
-    // دریافت دو کلمه از کاربران
-    printf("Player 1: ");
-    scanf("%s", word1);
-    printf("Player 2: ");
-    scanf("%s", word2);
+    // شمارش حروف، کلمات و جملات
+    int letters = count_letters(text);
+    int words = count_words(text);
+    int sentences = count_sentences(text);
 
-    // محاسبه امتیاز دو بازیکن
-    int score1 = compute_score(word1);
-    int score2 = compute_score(word2);
+    // محاسبه L و S
+    float L = (letters / (float) words) * 100;
+    float S = (sentences / (float) words) * 100;
 
-    // تعیین برنده
-    if (score1 > score2)
+    // محاسبه شاخص خوانایی
+    float index = 0.0588 * L - 0.296 * S - 15.8;
+    int grade = round(index);
+
+    // نمایش خروجی
+    if (grade < 1)
     {
-        printf("Player 1 wins!\n");
+        printf("Before Grade 1\n");
     }
-    else if (score1 < score2)
+    else if (grade >= 16)
     {
-        printf("Player 2 wins!\n");
+        printf("Grade 16+\n");
     }
     else
     {
-        printf("Tie!\n");
+        printf("Grade %i\n", grade);
     }
+}
 
-    return 0;
+// تابع شمارش حروف (فقط a-z و A-Z را حساب می‌کند)
+int count_letters(string text)
+{
+    int count = 0;
+    for (int i = 0, n = strlen(text); i < n; i++)
+    {
+        if (isalpha(text[i]))
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+// تابع شمارش کلمات (بر اساس فاصله‌ها)
+int count_words(string text)
+{
+    int count = 1; // حداقل یک کلمه داریم
+    for (int i = 0, n = strlen(text); i < n; i++)
+    {
+        if (text[i] == ' ')
+        {
+            count++;
+        }
+    }
+    return count;
+}
+
+// تابع شمارش جملات (براساس '.', '!', '?')
+int count_sentences(string text)
+{
+    int count = 0;
+    for (int i = 0, n = strlen(text); i < n; i++)
+    {
+        if (text[i] == '.' || text[i] == '!' || text[i] == '?')
+        {
+            count++;
+        }
+    }
+    return count;
 }
