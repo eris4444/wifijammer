@@ -1,84 +1,39 @@
 #include <cs50.h>
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 #include <ctype.h>
-#include <math.h>
+#include <string.h>
 
-int count_letters(string text);
-int count_words(string text);
-int count_sentences(string text);
+void encrypt(string text, int key);
 
-int main(void)
+int main(int argc, string argv[])
 {
-    // دریافت ورودی از کاربر
-    string text = get_string("Text: ");
-
-    // شمارش حروف، کلمات و جملات
-    int letters = count_letters(text);
-    int words = count_words(text);
-    int sentences = count_sentences(text);
-
-    // محاسبه L و S
-    float L = (letters / (float) words) * 100;
-    float S = (sentences / (float) words) * 100;
-
-    // محاسبه شاخص خوانایی
-    float index = 0.0588 * L - 0.296 * S - 15.8;
-    int grade = round(index);
-
-    // نمایش خروجی
-    if (grade < 1)
+    if (argc != 2 || atoi(argv[1]) <= 0)
     {
-        printf("Before Grade 1\n");
+        printf("Usage: ./caesar key\n");
+        return 1;
     }
-    else if (grade >= 16)
-    {
-        printf("Grade 16+\n");
-    }
-    else
-    {
-        printf("Grade %i\n", grade);
-    }
+
+    int key = atoi(argv[1]);
+    string plaintext = get_string("plaintext: ");
+
+    printf("ciphertext: ");
+    encrypt(plaintext, key);
+    printf("\n");
 }
 
-// تابع شمارش حروف (فقط a-z و A-Z را حساب می‌کند)
-int count_letters(string text)
+void encrypt(string text, int key)
 {
-    int count = 0;
     for (int i = 0, n = strlen(text); i < n; i++)
     {
         if (isalpha(text[i]))
         {
-            count++;
+            char base = isupper(text[i]) ? 'A' : 'a';
+            printf("%c", (text[i] - base + key) % 26 + base);
         }
-    }
-    return count;
-}
-
-// تابع شمارش کلمات (بر اساس فاصله‌ها)
-int count_words(string text)
-{
-    int count = 1; // حداقل یک کلمه داریم
-    for (int i = 0, n = strlen(text); i < n; i++)
-    {
-        if (text[i] == ' ')
+        else
         {
-            count++;
+            printf("%c", text[i]);
         }
     }
-    return count;
-}
-
-// تابع شمارش جملات (براساس '.', '!', '?')
-int count_sentences(string text)
-{
-    int count = 0;
-    for (int i = 0, n = strlen(text); i < n; i++)
-    {
-        if (text[i] == '.' || text[i] == '!' || text[i] == '?')
-        {
-            count++;
-        }
-    }
-    return count;
 }
