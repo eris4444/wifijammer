@@ -1,23 +1,115 @@
-1. Which sorting algorithm was the fastest?
-   - Merge Sort
+#include <stdio.h>
+#include <stdlib.h>
 
-2. Which sorting algorithm was the slowest?
-   - Bubble Sort
+// تابع برای ادغام دو زیرآرایه‌ی مرتب‌شده
+void merge(int arr[], int left, int mid, int right) {
+    int i, j, k;
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
 
-3. What is the time complexity of each algorithm?
-   - Bubble Sort: O(n^2)
-   - Selection Sort: O(n^2)
-   - Merge Sort: O(n log n)
+    // ایجاد آرایه‌های موقت
+    int L[n1], R[n2];
 
-4. Why is Merge Sort faster than Selection Sort and Bubble Sort?
-   - Merge Sort uses a divide and conquer approach, reducing the number of comparisons. 
-     Bubble Sort and Selection Sort require many comparisons even on large inputs.
+    // کپی داده‌ها به آرایه‌های موقت
+    for (i = 0; i < n1; i++)
+        L[i] = arr[left + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[mid + 1 + j];
 
-5. When might Selection Sort be preferred over Merge Sort?
-   - Selection Sort does not require extra memory, making it suitable for memory-constrained environments.
+    // ادغام آرایه‌های موقت به آرایه اصلی
+    i = 0; // ایندکس اولیه برای زیرآرایه چپ
+    j = 0; // ایندکس اولیه برای زیرآرایه راست
+    k = left; // ایندکس اولیه برای آرایه ادغام‌شده
+    while (i < n1 && j < n2) {
+        if (L[i] <= R[j]) {
+            arr[k] = L[i];
+            i++;
+        } else {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
 
-6. If an array is already sorted, which sorting algorithm performs best?
-   - Bubble Sort (optimized version) can complete in O(n) time by detecting that no swaps are needed.
+    // کپی عناصر باقی‌مانده از L (اگر وجود داشته باشد)
+    while (i < n1) {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
 
-7. If an array is nearly sorted, which sorting algorithm performs best?
-   - Bubble Sort (optimized) is the best, as it can detect the sorted portions and finish in fewer iterations.
+    // کپی عناصر باقی‌مانده از R (اگر وجود داشته باشد)
+    while (j < n2) {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+
+// تابع Merge Sort
+void mergeSort(int arr[], int left, int right) {
+    if (left < right) {
+        int mid = left + (right - left) / 2;
+
+        // مرتب‌سازی نیمه چپ
+        mergeSort(arr, left, mid);
+
+        // مرتب‌سازی نیمه راست
+        mergeSort(arr, mid + 1, right);
+
+        // ادغام دو نیمه مرتب‌شده
+        merge(arr, left, mid, right);
+    }
+}
+
+// تابع اصلی
+int main() {
+    int n;
+
+    // دریافت تعداد عناصر آرایه از کاربر
+    printf("Enter the number of elements: ");
+    scanf("%d", &n);
+
+    int arr[n];
+
+    // دریافت عناصر آرایه از کاربر
+    printf("Enter %d integers:\n", n);
+    for (int i = 0; i < n; i++) {
+        scanf("%d", &arr[i]);
+    }
+
+    // چاپ آرایه قبل از مرتب‌سازی
+    printf("Array before sorting:\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+
+    // فراخوانی تابع Merge Sort
+    mergeSort(arr, 0, n - 1);
+
+    // چاپ آرایه بعد از مرتب‌سازی
+    printf("Array after sorting:\n");
+    for (int i = 0; i < n; i++) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+
+    // ذخیره خروجی در فایل answers.txt
+    FILE *file = fopen("answers.txt", "w");
+    if (file == NULL) {
+        printf("Error opening file!\n");
+        return 1;
+    }
+
+    fprintf(file, "Array after sorting:\n");
+    for (int i = 0; i < n; i++) {
+        fprintf(file, "%d ", arr[i]);
+    }
+    fprintf(file, "\n");
+
+    fclose(file);
+    printf("Results saved to answers.txt\n");
+
+    return 0;
+}
