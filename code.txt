@@ -1,26 +1,131 @@
-1. Which sorting algorithm was the fastest?
-   - Merge Sort
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-2. Which sorting algorithm was the slowest?
-   - Bubble Sort
+#define SIZE 10000
 
-3. What is the time complexity of each algorithm?
-   - Bubble Sort: O(n^2)
-   - Selection Sort: O(n^2)
-   - Merge Sort: O(n log n)
+void bubble_sort(int arr[], int n);
+void selection_sort(int arr[], int n);
+void merge_sort(int arr[], int left, int right);
+void merge(int arr[], int left, int mid, int right);
+void swap(int *a, int *b);
 
-4. Why is Merge Sort faster than Selection Sort and Bubble Sort?
-   - Merge Sort uses the divide and conquer strategy, which reduces the number of comparisons significantly. 
-     While Bubble Sort and Selection Sort repeatedly iterate over the entire array, Merge Sort splits the array into 
-     smaller parts and sorts them recursively, making it much more efficient.
+int main(void)
+{
+    int arr1[SIZE], arr2[SIZE], arr3[SIZE];
+    
+    srand(time(NULL));
+    for (int i = 0; i < SIZE; i++)
+    {
+        int num = rand() % 10000;
+        arr1[i] = arr2[i] = arr3[i] = num;
+    }
 
-5. When might Selection Sort be preferred over Merge Sort?
-   - Selection Sort might be preferred when memory is limited because it is an in-place sorting algorithm, meaning it does not 
-     require additional space like Merge Sort does.
+    clock_t start, end;
 
-6. If an array is already sorted, which sorting algorithm performs best?
-   - Bubble Sort (with an optimized version that detects sorted arrays) can be the best because it can complete in O(n) time 
-     if no swaps are needed. Merge Sort and Selection Sort will still perform their usual O(n log n) and O(n^2) operations.
+    start = clock();
+    bubble_sort(arr1, SIZE);
+    end = clock();
+    printf("Bubble Sort Time: %f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
 
-7. If an array is nearly sorted, which sorting algorithm performs best?
-   - Bubble Sort (optimized version) performs best because it can detect when the array is already sorted and stop early.
+    start = clock();
+    selection_sort(arr2, SIZE);
+    end = clock();
+    printf("Selection Sort Time: %f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+
+    start = clock();
+    merge_sort(arr3, 0, SIZE - 1);
+    end = clock();
+    printf("Merge Sort Time: %f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
+}
+
+void bubble_sort(int arr[], int n)
+{
+    for (int i = 0; i < n - 1; i++)
+    {
+        for (int j = 0; j < n - i - 1; j++)
+        {
+            if (arr[j] > arr[j + 1])
+            {
+                swap(&arr[j], &arr[j + 1]);
+            }
+        }
+    }
+}
+
+void selection_sort(int arr[], int n)
+{
+    for (int i = 0; i < n - 1; i++)
+    {
+        int min_idx = i;
+        for (int j = i + 1; j < n; j++)
+        {
+            if (arr[j] < arr[min_idx])
+            {
+                min_idx = j;
+            }
+        }
+        swap(&arr[i], &arr[min_idx]);
+    }
+}
+
+void merge_sort(int arr[], int left, int right)
+{
+    if (left < right)
+    {
+        int mid = left + (right - left) / 2;
+        merge_sort(arr, left, mid);
+        merge_sort(arr, mid + 1, right);
+        merge(arr, left, mid, right);
+    }
+}
+
+void merge(int arr[], int left, int mid, int right)
+{
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+    int L[n1], R[n2];
+
+    for (int i = 0; i < n1; i++)
+        L[i] = arr[left + i];
+    for (int i = 0; i < n2; i++)
+        R[i] = arr[mid + 1 + i];
+
+    int i = 0, j = 0, k = left;
+    while (i < n1 && j < n2)
+    {
+        if (L[i] <= R[j])
+        {
+            arr[k] = L[i];
+            i++;
+        }
+        else
+        {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+
+    while (i < n1)
+    {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+
+    while (j < n2)
+    {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+
+void swap(int *a, int *b)
+{
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
