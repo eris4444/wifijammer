@@ -8,3 +8,19 @@
    - Bubble Sort: O(n^2)
    - Selection Sort: O(n^2)
    - Merge Sort: O(n log n)
+
+4. Why is Merge Sort faster than Selection Sort and Bubble Sort?
+   - Merge Sort uses the divide and conquer strategy, which reduces the number of comparisons significantly. 
+     While Bubble Sort and Selection Sort repeatedly iterate over the entire array, Merge Sort splits the array into 
+     smaller parts and sorts them recursively, making it much more efficient.
+
+5. When might Selection Sort be preferred over Merge Sort?
+   - Selection Sort might be preferred when memory is limited because it is an in-place sorting algorithm, meaning it does not 
+     require additional space like Merge Sort does.
+
+6. If an array is already sorted, which sorting algorithm performs best?
+   - Bubble Sort (with an optimized version that detects sorted arrays) can be the best because it can complete in O(n) time 
+     if no swaps are needed. Merge Sort and Selection Sort will still perform their usual O(n log n) and O(n^2) operations.
+
+7. If an array is nearly sorted, which sorting algorithm performs best?
+   - Bubble Sort (optimized version) performs best because it can detect when the array is already sorted and stop early.
