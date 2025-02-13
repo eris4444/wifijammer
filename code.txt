@@ -1,52 +1,41 @@
-#include <cs50.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
 
-bool is_numeric(string str);
-void encrypt(string text, int key);
+void selection_sort(int arr[], int n);
+void swap(int *a, int *b);
 
-int main(int argc, string argv[])
+int main(void)
 {
-    if (argc != 2 || !is_numeric(argv[1]))
+    int arr[] = {64, 25, 12, 22, 11};
+    int n = sizeof(arr) / sizeof(arr[0]);
+
+    selection_sort(arr, n);
+
+    for (int i = 0; i < n; i++)
     {
-        printf("Usage: ./caesar key\n");
-        return 1;
+        printf("%d ", arr[i]);
     }
-
-    int key = atoi(argv[1]);
-    string plaintext = get_string("plaintext: ");
-
-    printf("ciphertext: ");
-    encrypt(plaintext, key);
     printf("\n");
 }
 
-bool is_numeric(string str)
+void selection_sort(int arr[], int n)
 {
-    for (int i = 0, n = strlen(str); i < n; i++)
+    for (int i = 0; i < n - 1; i++)
     {
-        if (!isdigit(str[i]))
+        int min_idx = i;
+        for (int j = i + 1; j < n; j++)
         {
-            return false;
+            if (arr[j] < arr[min_idx])
+            {
+                min_idx = j;
+            }
         }
+        swap(&arr[i], &arr[min_idx]);
     }
-    return true;
 }
 
-void encrypt(string text, int key)
+void swap(int *a, int *b)
 {
-    for (int i = 0, n = strlen(text); i < n; i++)
-    {
-        if (isalpha(text[i]))
-        {
-            char base = isupper(text[i]) ? 'A' : 'a';
-            printf("%c", (text[i] - base + key) % 26 + base);
-        }
-        else
-        {
-            printf("%c", text[i]);
-        }
-    }
+    int temp = *a;
+    *a = *b;
+    *b = temp;
 }
