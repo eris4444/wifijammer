@@ -1,102 +1,46 @@
 import json
-import logging
-from telegram import Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-import requests
 
-# فعال کردن لاگ‌ها
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# توکن ربات تلگرام و ID ادمین
+# توکن ربات و شناسه چت ادمین
 TELEGRAM_BOT_TOKEN = "8046438186:AAGjlj476vckhqfONymWaIQeqfpMEVkobac"
 ADMIN_CHAT_ID = "5619969053"
 
-# فایل JSON ذخیره‌سازی
-USERS_JSON_FILE = "users.json"
+# نام فایل JSON برای ذخیره کاربران
+USERS_JSON_FILE = 'users.json'
 
-# ساختار داده کاربران
-users_data = {"users": []}
+# داده‌های کاربران
+users_data = { "users": [] }
 
-# تابع ارسال پیام تلگرام
-def send_telegram_message(chat_id, text):
-    url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage'
-    response = requests.post(url, json={'chat_id': chat_id, 'text': text})
-    return response
-
-# تابع ارسال عکس تلگرام
-def send_telegram_photo(chat_id, file_id):
-    url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendPhoto'
-    response = requests.post(url, json={'chat_id': chat_id, 'photo': file_id})
-    return response
-
-# تابع شروع (Start)
-def start(update: Update, context: CallbackContext):
-    chat_id = update.message.chat.id
-    create_user(chat_id)
-    send_telegram_message(chat_id, "به ربات معاملات بیت‌کوین خوش آمدید! از /help برای راهنما استفاده کنید.")
-
-# تابع راهنما (Help)
-def help(update: Update, context: CallbackContext):
-    chat_id = update.message.chat.id
-    send_telegram_message(chat_id, "دستورات ربات:\n/balance - مشاهده موجودی\n/deposit - شارژ حساب\n/trade - انجام معامله")
-
-# تابع مشاهده موجودی (Balance)
-def balance(update: Update, context: CallbackContext):
-    chat_id = update.message.chat.id
-    balance = get_user_balance(chat_id)
-    send_telegram_message(chat_id, f"💰 موجودی شما: {balance} USDT")
-
-# تابع شارژ حساب (Deposit)
-def deposit(update: Update, context: CallbackContext):
-    chat_id = update.message.chat.id
-    send_telegram_message(chat_id, "🔹 لطفاً مبلغ واریزی خود را به شماره کارت زیر ارسال کنید:\n\n💳 1234-5678-9012-3456\n\n✅ سپس رسید واریز را ارسال کنید.")
-
-# تابع پردازش رسید واریز
-def handle_deposit_receipt(update: Update, context: CallbackContext):
-    chat_id = update.message.chat.id
-    if update.message.photo:
-        file_id = update.message.photo[-1].file_id
-        send_telegram_message(ADMIN_CHAT_ID, f"📩 رسید واریز جدید از کاربر {chat_id}:\n\n✔️ لطفاً بررسی کنید.")
-        send_telegram_photo(ADMIN_CHAT_ID, file_id)
-        send_telegram_message(chat_id, "✅ رسید شما دریافت شد و منتظر تایید ادمین است.")
-
-# تابع انجام معامله (Trade)
-def trade(update: Update, context: CallbackContext):
-    chat_id = update.message.chat.id
-    text = update.message.text.strip()
+# بارگذاری اطلاعات از فایل JSON
+def load_data_from_file():
+    global users_data
     try:
-        _, amount, leverage = text.split(" ")
-        amount = float(amount)
-        leverage = int(leverage)
-    except ValueError:
-        send_telegram_message(chat_id, "❌ دستور معامله اشتباه است. فرمت صحیح: /trade <مقدار> <ضریب>")
-        return
+        with open(USERS_JSON_FILE, 'r') as file:
+            users_data = json.load(file)
+    except Exception as e:
+        print(f"Error reading users file: {e}")
 
-    if leverage <= 0 or leverage > 10:
-        send_telegram_message(chat_id, "❌ ضریب معامله باید بین 1 تا 10 باشد.")
-        return
-
-    balance = get_user_balance(chat_id)
-    if amount > balance:
-        send_telegram_message(chat_id, "❌ موجودی شما کافی نیست.")
-        return
-
-    new_balance = balance - amount
-    update_user_balance(chat_id, new_balance)
-
-    send_telegram_message(chat_id, f"✅ معامله به ارزش {amount} USDT با ضریب {leverage} انجام شد.")
+# ذخیره اطلاعات به فایل JSON
+def save_data_to_file():
+    try:
+        with open(USERS_JSON_FILE, 'w') as file:
+            json.dump(users_data, file)
+    except Exception as e:
+        print(f"Error saving users data: {e}")
 
 # ایجاد کاربر جدید
 def create_user(chat_id):
+    # بررسی اگر کاربر از قبل در سیستم موجود باشد
     user_exists = any(user['telegram_id'] == chat_id for user in users_data['users'])
     if user_exists:
         return
+
+    # افزودن کاربر جدید
     users_data['users'].append({
-        "telegram_id": chat_id,
-        "balance": 0,
-        "deposits": []
+        'telegram_id': chat_id,
+        'balance': 0,
+        'deposits': []
     })
     save_data_to_file()
 
@@ -105,73 +49,94 @@ def get_user_balance(chat_id):
     user = next((user for user in users_data['users'] if user['telegram_id'] == chat_id), None)
     return user['balance'] if user else 0
 
-# به روز رسانی موجودی کاربر
-def update_user_balance(chat_id, new_balance):
-    user = next((user for user in users_data['users'] if user['telegram_id'] == chat_id), None)
-    if user:
-        user['balance'] = new_balance
-        save_data_to_file()
+# ارسال دکمه‌های inline
+def send_inline_buttons(update, buttons, message):
+    reply_markup = InlineKeyboardMarkup(buttons)
+    update.message.reply_text(message, reply_markup=reply_markup)
 
-# ذخیره داده‌ها به فایل JSON
-def save_data_to_file():
-    with open(USERS_JSON_FILE, 'w') as f:
-        json.dump(users_data, f)
+# شروع ربات و نمایش دکمه‌ها
+def start(update, context):
+    chat_id = update.message.chat.id
+    create_user(chat_id)
+    
+    buttons = [
+        [InlineKeyboardButton("موجودی", callback_data='balance')],
+        [InlineKeyboardButton("شارژ حساب", callback_data='deposit')],
+        [InlineKeyboardButton("راهنما", callback_data='help')]
+    ]
+    send_inline_buttons(update, buttons, "به ربات معاملات بیت‌کوین خوش آمدید! لطفاً یکی از گزینه‌ها را انتخاب کنید.")
+
+# نمایش راهنما با دکمه‌ها
+def help(update, context):
+    buttons = [
+        [InlineKeyboardButton("موجودی", callback_data='balance')],
+        [InlineKeyboardButton("شارژ حساب", callback_data='deposit')]
+    ]
+    send_inline_buttons(update, buttons, "دستورات ربات:\n\n1. موجودی: مشاهده موجودی حساب.\n2. شارژ حساب: برای شارژ حساب.")
+    
+# موجودی کاربر
+def balance(update, context):
+    chat_id = update.message.chat.id
+    balance = get_user_balance(chat_id)
+    update.message.reply_text(f"💰 موجودی شما: {balance} USDT")
+
+# شارژ حساب کاربر
+def deposit(update, context):
+    chat_id = update.message.chat.id
+    update.message.reply_text("🔹 لطفاً مبلغ واریزی خود را به شماره کارت ارسال کنید.\n\n✅ سپس رسید واریز را ارسال کنید.")
+
+# تایید واریز توسط ادمین
+def accept_deposit(update, context):
+    chat_id = update.message.chat.id
+    
+    # بررسی که ادمین باشد
+    if chat_id != int(ADMIN_CHAT_ID):
+        update.message.reply_text("❌ فقط ادمین می‌تواند این کار را انجام دهد.")
+        return
+
+    # بررسی اینکه پارامترهای صحیح ارسال شده باشند
+    if len(context.args) < 2:
+        update.message.reply_text("❌ لطفاً شماره چت کاربر و مبلغ واریزی را وارد کنید.\nبه این صورت: /accept [chat_id] [amount]")
+        return
+
+    user_chat_id = int(context.args[0])  # chat_id کاربر
+    deposit_amount = float(context.args[1])  # مبلغ واریزی
+
+    # پیدا کردن کاربر
+    user = next((user for user in users_data['users'] if user['telegram_id'] == user_chat_id), None)
+    if user:
+        # افزودن مبلغ به موجودی کاربر
+        user['balance'] += deposit_amount
+        save_data_to_file()
+        update.message.reply_text(f"✅ حساب کاربر با ID {user_chat_id} به مبلغ {deposit_amount} شارژ شد.")
+    else:
+        update.message.reply_text(f"❌ کاربری با ID {user_chat_id} پیدا نشد.")
+
+# هندلر برای دکمه‌های inline
+def button(update, context):
+    query = update.callback_query
+    query.answer()
+    
+    if query.data == 'balance':
+        balance(update, context)
+    elif query.data == 'deposit':
+        deposit(update, context)
+    elif query.data == 'help':
+        help(update, context)
 
 # بارگذاری داده‌ها از فایل JSON
-def load_data_from_file():
-    global users_data
-    try:
-        with open(USERS_JSON_FILE, 'r') as f:
-            users_data = json.load(f)
-    except FileNotFoundError:
-        users_data = {"users": []}
+load_data_from_file()
 
-# تنظیم Webhook
-def set_webhook():
-    url = f'https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/setWebhook?url=https://your-server-url.com/webhook'
-    response = requests.get(url)
-    if response.status_code == 200:
-        print("Webhook با موفقیت تنظیم شد.")
-    else:
-        print("خطا در تنظیم Webhook.")
+# راه‌اندازی ربات و افزودن هندلرها
+updater = Updater(TELEGRAM_BOT_TOKEN, use_context=True)
 
-# پردازش Webhook
-def webhook(update: Update, context: CallbackContext):
-    if update.message:
-        message = update.message.text.strip()
-        chat_id = update.message.chat.id
-        if message == "/start":
-            start(update, context)
-        elif message == "/help":
-            help(update, context)
-        elif message == "/balance":
-            balance(update, context)
-        elif message == "/deposit":
-            deposit(update, context)
-        elif message.startswith("/trade"):
-            trade(update, context)
-        else:
-            send_telegram_message(chat_id, "❌ دستور نامعتبر است.")
+dp = updater.dispatcher
+
+dp.add_handler(CommandHandler("start", start))
+dp.add_handler(CommandHandler("help", help))
+dp.add_handler(CommandHandler("accept", accept_deposit))
+dp.add_handler(MessageHandler(Filters.text & ~Filters.command, button))
 
 # شروع ربات
-def main():
-    load_data_from_file()
-
-    # استفاده از Webhook برای دریافت پیام‌ها
-    set_webhook()
-
-    # تنظیم آپدیت‌کننده و افزودن هندلرها
-    updater = Updater(TELEGRAM_BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("help", help))
-    dp.add_handler(CommandHandler("balance", balance))
-    dp.add_handler(CommandHandler("deposit", deposit))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, webhook))
-    dp.add_handler(MessageHandler(Filters.photo, handle_deposit_receipt))
-
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == '__main__':
-    main()
+updater.start_polling()
+updater.idle()
