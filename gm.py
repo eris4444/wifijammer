@@ -1,5 +1,5 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackContext, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, CallbackContext, filters
 import json
 
 # توکن ربات و شناسه ادمین
@@ -13,43 +13,43 @@ users_data = { "users": [] }
 USERS_JSON_FILE = "users.json"
 
 # فراخوانی webhook تلگرام
-def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: CallbackContext):
     chat_id = update.message.chat.id
     text = update.message.text.strip()
 
     # ورود و ثبت کاربر جدید
     if text == "/start":
         create_user(chat_id)
-        update.message.reply_text("به ربات معاملات بیت‌کوین خوش آمدید! از /help برای راهنما استفاده کنید.")
+        await update.message.reply_text("به ربات معاملات بیت‌کوین خوش آمدید! از /help برای راهنما استفاده کنید.")
 
-def help(update: Update, context: CallbackContext):
-    update.message.reply_text("دستورات ربات:\n/balance - مشاهده موجودی\n/deposit - شارژ حساب\n/trade - انجام معامله")
+async def help(update: Update, context: CallbackContext):
+    await update.message.reply_text("دستورات ربات:\n/balance - مشاهده موجودی\n/deposit - شارژ حساب\n/trade - انجام معامله")
 
-def balance(update: Update, context: CallbackContext):
+async def balance(update: Update, context: CallbackContext):
     chat_id = update.message.chat.id
     balance = get_user_balance(chat_id)
-    update.message.reply_text(f"💰 موجودی شما: {balance} USDT")
+    await update.message.reply_text(f"💰 موجودی شما: {balance} USDT")
 
-def deposit(update: Update, context: CallbackContext):
+async def deposit(update: Update, context: CallbackContext):
     chat_id = update.message.chat.id
-    update.message.reply_text("🔹 لطفاً مبلغ واریزی خود را به شماره کارت زیر ارسال کنید:\n\n💳 1234-5678-9012-3456\n\n✅ سپس رسید واریز را ارسال کنید.")
+    await update.message.reply_text("🔹 لطفاً مبلغ واریزی خود را به شماره کارت زیر ارسال کنید:\n\n💳 1234-5678-9012-3456\n\n✅ سپس رسید واریز را ارسال کنید.")
 
-def trade(update: Update, context: CallbackContext):
+async def trade(update: Update, context: CallbackContext):
     chat_id = update.message.chat.id
     if len(context.args) != 2:
-        update.message.reply_text("❌ دستور نامعتبر است. لطفاً از فرمت صحیح استفاده کنید: /trade amount leverage")
+        await update.message.reply_text("❌ دستور نامعتبر است. لطفاً از فرمت صحیح استفاده کنید: /trade amount leverage")
         return
     amount = float(context.args[0])
     leverage = int(context.args[1])
-    handle_trade(chat_id, amount, leverage)
+    await handle_trade(chat_id, amount, leverage)
 
-def handle_trade(chat_id, amount, leverage):
+async def handle_trade(chat_id, amount, leverage):
     if amount <= 0 or leverage <= 0 or leverage > 10:
-        return send_telegram_message(chat_id, "❌ مقدار معامله یا ضریب نامعتبر است.")
+        return await send_telegram_message(chat_id, "❌ مقدار معامله یا ضریب نامعتبر است.")
 
     balance = get_user_balance(chat_id)
     if amount > balance:
-        return send_telegram_message(chat_id, "❌ موجودی شما کافی نیست.")
+        return await send_telegram_message(chat_id, "❌ موجودی شما کافی نیست.")
 
     new_balance = balance - amount
     user = get_user(chat_id)
@@ -58,7 +58,7 @@ def handle_trade(chat_id, amount, leverage):
 
     save_data_to_file()
 
-    return send_telegram_message(chat_id, f"✅ معامله به ارزش {amount} USDT با ضریب {leverage} انجام شد.")
+    return await send_telegram_message(chat_id, f"✅ معامله به ارزش {amount} USDT با ضریب {leverage} انجام شد.")
 
 def get_user(chat_id):
     return next((user for user in users_data["users"] if user["telegram_id"] == chat_id), None)
@@ -83,27 +83,26 @@ def save_data_to_file():
     with open(USERS_JSON_FILE, "w") as f:
         json.dump(users_data, f)
 
-def send_telegram_message(chat_id, text):
-    return context.bot.send_message(chat_id=chat_id, text=text)
+async def send_telegram_message(chat_id, text):
+    return await context.bot.send_message(chat_id=chat_id, text=text)
 
 # در اینجا باید webhook ربات را ثبت کنید (اختیاری)
 # پس از این که webhook تنظیم شد، این بخش فعال می‌شود.
 
-def main():
-    # ایجاد updater و dispatcher
-    updater = Updater(TELEGRAM_BOT_TOKEN)
-    dispatcher = updater.dispatcher
+async def main():
+    # ایجاد application
+    application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     # افزودن handler ها
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help))
-    dispatcher.add_handler(CommandHandler("balance", balance))
-    dispatcher.add_handler(CommandHandler("deposit", deposit))
-    dispatcher.add_handler(CommandHandler("trade", trade, pass_args=True))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help))
+    application.add_handler(CommandHandler("balance", balance))
+    application.add_handler(CommandHandler("deposit", deposit))
+    application.add_handler(CommandHandler("trade", trade, filters=args))
 
     # شروع ربات
-    updater.start_polling()
-    updater.idle()
+    await application.run_polling()
 
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())
